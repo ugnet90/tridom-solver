@@ -42,12 +42,12 @@ jobs:
           python tridom_solver.py --shape "${{ inputs.shape }}" --time-limit "$TL" --seed "$SEED" --log "${PREFIX}run.log" --out-prefix "$PREFIX"
 
       - name: Upload shard results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: tridom-results-shards
-          path: |
-            shard_*_*.png
-            shard_*_*.pdf
-            shard_*_run.log
-            shard_*_status.json
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: tridom-results-shard-${{ matrix.shard }}
+            path: |
+              shard_*_*.png
+              shard_*_*.pdf
+              shard_*_run.log
+              shard_*_status.json
