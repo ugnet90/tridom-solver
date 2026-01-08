@@ -1,19 +1,31 @@
-name: Tridom Solver
+name: Tridom Solver (Sharded)
 
 on:
   workflow_dispatch:
+    inputs:
+      shape:
+        description: "A, B oder AB"
+        required: true
+        default: "A"
+      shard_minutes:
+        description: "Laufzeit pro Shard in Minuten"
+        required: true
+        default: "30"
 
 jobs:
   solve:
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1,2,3,4,5,6,7,8,9,10,11,12]   # 12 Shards
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -22,15 +34,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install matplotlib
 
-      - name: Run solver
+      - name: Run shard
         run: |
-          python tridom_solver.py
+          SEED=$((10000 + ${{ matrix.shard }}))
+          TL=$(( ${{ inputs.shard_minutes }} * 60 ))
+          PREFIX="shard_${{ matrix.shard }}_"
+          python tridom_solver.py --shape "${{ inputs.shape }}" --time-limit "$TL" --seed "$SEED" --log "${PREFIX}run.log" --out-prefix "$PREFIX"
 
-      - name: Upload results
+      - name: Upload shard results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tridom-results
+          name: tridom-results-shards
           path: |
-            *.png
-            *.pdf
+            shard_*_*.png
+            shard_*_*.pdf
+            shard_*_run.log
+            shard_*_status.json
